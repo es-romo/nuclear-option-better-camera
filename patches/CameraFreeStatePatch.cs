@@ -7,6 +7,7 @@ namespace BetterCamera.patches;
 public static class CameraFreeStatePatch
 {
     static GameObject cameraTarget = new GameObject();
+    static bool verticalCameraAbsolute = true;
 
     [HarmonyPatch(typeof(CameraFreeState), nameof(CameraFreeState.EnterState))]
     class EnterState
@@ -33,6 +34,10 @@ public static class CameraFreeStatePatch
             if (Input.GetKey(KeyCode.PageDown))
             {
                 ___desiredFOV += 25f * Time.unscaledDeltaTime;
+            }
+            if (Input.GetKeyDown(KeyCode.CapsLock))
+            {
+                verticalCameraAbsolute = !verticalCameraAbsolute;
             }
             ___desiredFOV = Mathf.Clamp(___desiredFOV, 5f, 90f);
             cam.mainCamera.fieldOfView = Mathf.Lerp(cam.mainCamera.fieldOfView, ___desiredFOV, Time.unscaledDeltaTime);
@@ -67,13 +72,14 @@ public static class CameraFreeStatePatch
                 {
                     d = 3000f;
                 }
+                var up = verticalCameraAbsolute ? Vector3.up : cam.transform.up;
                 if (Input.GetKey(KeyCode.Space))
                 {
-                    cam.cameraVelocity += d * Vector3.up * Time.unscaledDeltaTime;
+                    cam.cameraVelocity += d * up * Time.unscaledDeltaTime;
                 }
                 if (Input.GetKey(KeyCode.LeftControl))
                 {
-                    cam.cameraVelocity += d * Vector3.down * Time.unscaledDeltaTime;
+                    cam.cameraVelocity += d * -up * Time.unscaledDeltaTime;
                 }
                 float axis = GameManager.playerInput.GetAxis("Move Longitudinal");
                 float axis2 = GameManager.playerInput.GetAxis("Move Lateral");
