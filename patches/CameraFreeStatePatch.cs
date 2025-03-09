@@ -1,38 +1,28 @@
 ﻿using HarmonyLib;
 using NuclearOption.MissionEditorScripts;
-using System;
 using UnityEngine;
 
 namespace BetterCamera.patches;
 
 public static class CameraFreeStatePatch
 {
-    static Transform targetTransform;
+    static GameObject cameraTarget = new GameObject();
 
     [HarmonyPatch(typeof(CameraFreeState), nameof(CameraFreeState.EnterState))]
     class EnterState
     {
         static void Postfix(CameraStateManager cam)
         {
-            targetTransform = (new GameObject()).transform;
-            targetTransform.forward = cam.transform.forward;
-            targetTransform.up = cam.transform.up;
-            targetTransform.right = cam.transform.right;
-        }
-    }
-
-    [HarmonyPatch(typeof(CameraFreeState), nameof(CameraFreeState.LeaveState))]
-    class LeaveState
-    {
-        static void Postfix(CameraStateManager cam)
-        {
+            cameraTarget.transform.forward = cam.transform.forward;
+            cameraTarget.transform.up = cam.transform.up;
+            cameraTarget.transform.right = cam.transform.right;
         }
     }
 
     [HarmonyPatch(typeof(CameraFreeState), nameof(CameraFreeState.UpdateState))]
     class UpdateState
     {
-        static bool Prefix(ref CameraStateManager cam, CameraFreeState __instance, ref float ___stateTime, ref float ___desiredFOV, ref RaycastHit ___hit, ref float ___tiltView, ref float ___panView, ref Vector3 ___mousePosPrev, ref bool ___trackTarget)
+        static bool Prefix(ref CameraStateManager cam, ref float ___stateTime, ref float ___desiredFOV, ref RaycastHit ___hit, ref Vector3 ___mousePosPrev)
         {
             ___stateTime += Time.deltaTime;
             cam.windNoiseExternal.volume = 0f;
@@ -72,13 +62,6 @@ public static class CameraFreeStatePatch
                     numr = 0f;
                 }
                 ___mousePosPrev = Input.mousePosition;
-                if (Mathf.Abs(num) > 0f || Mathf.Abs(num2) > 0f || Mathf.Abs(numr) > 0f)
-                {
-                    ___tiltView += num2;
-                    ___panView += num;
-                    ___trackTarget = false;
-
-                }
                 float d = 300f;
                 if (Input.GetKey("left shift"))
                 {
@@ -92,22 +75,13 @@ public static class CameraFreeStatePatch
                 {
                     cam.cameraVelocity += d * Vector3.down * Time.unscaledDeltaTime;
                 }
-                if (Input.GetKey(KeyCode.Space))
-                {
-                    cam.cameraVelocity += d * Vector3.up * Time.unscaledDeltaTime;
-                }
-                if (Input.GetKey(KeyCode.LeftControl))
-                {
-                    cam.cameraVelocity += d * Vector3.down * Time.unscaledDeltaTime;
-                }
-
                 float axis = GameManager.playerInput.GetAxis("Move Longitudinal");
                 float axis2 = GameManager.playerInput.GetAxis("Move Lateral");
                 cam.cameraVelocity += d * cam.transform.forward * axis * Time.unscaledDeltaTime;
                 cam.cameraVelocity += d * cam.transform.right * axis2 * Time.unscaledDeltaTime;
-                targetTransform.transform.Rotate(num2, num, numr);
+                cameraTarget.transform.transform.Rotate(num2, num, numr);
             }
-            cam.transform.rotation = Quaternion.Lerp(cam.transform.rotation, targetTransform.transform.rotation, Mathf.Min(2f * Time.unscaledDeltaTime / PlayerSettings.viewSmoothing, 1f));
+            cam.transform.rotation = Quaternion.Lerp(cam.transform.rotation, cameraTarget.transform.transform.rotation, Mathf.Min(2f * Time.unscaledDeltaTime / PlayerSettings.viewSmoothing, 1f));
             cam.transform.position += cam.cameraVelocity * 0.02f;
             if ((MissionEditor.i == null || !MissionEditor.i.allowCameraClip) && Physics.Linecast(cam.transform.position + Vector3.up * 5000f, cam.transform.position - Vector3.up * 5000f, out ___hit, 64))
             {
