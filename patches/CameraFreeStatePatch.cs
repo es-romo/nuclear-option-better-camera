@@ -1,13 +1,19 @@
 ﻿using HarmonyLib;
 using NuclearOption.MissionEditorScripts;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace BetterCamera.patches;
 
 public static class CameraFreeStatePatch
 {
-    static GameObject cameraTarget = new GameObject();
+    static readonly GameObject cameraTarget = new GameObject();
     static bool verticalCameraAbsolute = true;
+    static float boostSpeed = 3000f;
+    static readonly float BASE_SPEED = 300f;
+    static readonly float MAX_BOOST_SPEED = 6000f;
+    static readonly float MIN_BOOST_SPEED = 300f;
+    static readonly float scrollSensitivity = 1f;
 
     [HarmonyPatch(typeof(CameraFreeState), nameof(CameraFreeState.EnterState))]
     class EnterState
@@ -67,10 +73,14 @@ public static class CameraFreeStatePatch
                     numr = 0f;
                 }
                 ___mousePosPrev = Input.mousePosition;
-                float d = 300f;
+                float d = BASE_SPEED;
+                // Scroll rate target could be %(MAX_BOOST_SPEED - MIN_BOOST_SPEED) / second
+                // Scroll rate target could be constant speed per second
+                boostSpeed = Mathf.Clamp(boostSpeed + 10000f * Input.mouseScrollDelta.y * scrollSensitivity * Time.unscaledDeltaTime, MIN_BOOST_SPEED, MAX_BOOST_SPEED);
+                Plugin.Logger.LogInfo($"{Input.mouseScrollDelta.y}, {boostSpeed}");
                 if (Input.GetKey("left shift"))
                 {
-                    d = 3000f;
+                    d = boostSpeed;
                 }
                 var up = verticalCameraAbsolute ? Vector3.up : cam.transform.up;
                 if (Input.GetKey(KeyCode.Space))
