@@ -77,7 +77,7 @@ public static class CameraFreeStatePatch
                 // Scroll rate target could be %(MAX_BOOST_SPEED - MIN_BOOST_SPEED) / second
                 // Scroll rate target could be constant speed per second
                 boostSpeed = Mathf.Clamp(boostSpeed + 10000f * Input.mouseScrollDelta.y * scrollSensitivity * Time.unscaledDeltaTime, MIN_BOOST_SPEED, MAX_BOOST_SPEED);
-                Plugin.Logger.LogInfo($"{Input.mouseScrollDelta.y}, {boostSpeed}");
+                //Plugin.Logger.LogInfo($"{Input.mouseScrollDelta.y}, {boostSpeed}");
                 if (Input.GetKey("left shift"))
                 {
                     d = boostSpeed;
